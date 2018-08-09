@@ -12,9 +12,9 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 
-class NewFiXmlParser private constructor(context: Context) {
+class KmlParser private constructor(context: Context) {
 
-    private val TAG: String = NewFiXmlParser::class.java.simpleName
+    private val TAG: String = KmlParser::class.java.simpleName
     private var appContext = context.applicationContext
     private var pullParser = XmlPullParserFactory.newInstance().newPullParser()
 
@@ -22,7 +22,7 @@ class NewFiXmlParser private constructor(context: Context) {
         // Initializing
     }
 
-    companion object: SingletonHolder<NewFiXmlParser, Context>(:: NewFiXmlParser)
+    companion object: SingletonHolder<KmlParser, Context>(:: KmlParser)
 
     @Throws(XmlPullParserException::class, IOException::class)
     fun <T : Any>parse(@NonNull file: File, @NonNull clazz: Class<T>): Observable<T> {

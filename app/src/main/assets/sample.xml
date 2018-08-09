@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<products xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    version="1.1.2" bundleversion="1.1.45.0" >
+
+    <commands>
+        <msg type="R">
+            <command val="0x00" name="TEST_MESSAGE_00" id="read" />
+            <results>
+                <result parsername="Read" name="READ" type="READ"/>
+            </results>
+        </msg>
+
+        <msg type="W">
+            <command val="0x01" name="TEST_MESSAGE_01" id="write" />
+            <results>
+                <result parsername="Write" name="WRITE" type="WRITE"/>
+            </results>
+        </msg>
+    </commands>
+</products>
