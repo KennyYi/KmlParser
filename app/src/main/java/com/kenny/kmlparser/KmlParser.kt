@@ -2,7 +2,6 @@ package com.kenny.kmlparser
 
 import android.content.Context
 import android.support.annotation.NonNull
-import android.util.Log
 import io.reactivex.Observable
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
@@ -11,6 +10,8 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.full.memberProperties
 
 class KmlParser private constructor(context: Context) {
 
@@ -23,6 +24,12 @@ class KmlParser private constructor(context: Context) {
     }
 
     companion object: SingletonHolder<KmlParser, Context>(:: KmlParser)
+
+    @Throws(XmlPullParserException::class, IOException::class)
+    fun <T : Any>parse(@NonNull path: String, @NonNull clazz: Class<T>): Observable<T> {
+
+        return parse(File(path), clazz)
+    }
 
     @Throws(XmlPullParserException::class, IOException::class)
     fun <T : Any>parse(@NonNull file: File, @NonNull clazz: Class<T>): Observable<T> {
@@ -39,24 +46,21 @@ class KmlParser private constructor(context: Context) {
             pullParser.nextTag()
 
             if (pullParser.name.equals(clazz.simpleName, true)) {
+
                 val instance = clazz.newInstance()
-
-                Log.d("Kenny", "instance: ${instance}")
-
                 val attributeMap = HashMap<String, Any>()
 
                 for (index in 0..(pullParser.attributeCount - 1)) {
-                    Log.d("Kenny", "${pullParser.getAttributeName(index)} ${pullParser.getAttributeNamespace(index)} ${pullParser.getAttributeValue(index)}")
                     attributeMap[pullParser.getAttributeName(index)] = pullParser.getAttributeValue(index)
                 }
 
                 for (field in clazz.declaredFields) {
 
                     val name = field.name
-                    System.out.println("field: ${field.name}")
-                    Log.d("Kenny", "find from map: $name -> ${attributeMap[name]}")
-                    val property = instance::class.java.getDeclaredField(field.name)
-                    property.set(instance, attributeMap[name])
+                    val property = instance::class.memberProperties.find { it.name == name }
+                    if (property is KMutableProperty<*>) {
+                        property.setter.call(instance, attributeMap[name])
+                    }
                 }
 
                 return Observable.just(instance)
