@@ -5,17 +5,20 @@
 
     <commands>
         <msg type="R">
-            <command val="0x00" name="TEST_MESSAGE_00" id="read" />
+            <command value="0x00" name="TEST_MESSAGE_00" id="read" />
             <results>
                 <result parsername="Read" name="READ" type="READ"/>
+                <result parsername="Read2" name="READ2" type="READ2"/>
             </results>
         </msg>
-
         <msg type="W">
-            <command val="0x01" name="TEST_MESSAGE_01" id="write" />
+            <command value="0x01" name="TEST_MESSAGE_01" id="write" />
             <results>
                 <result parsername="Write" name="WRITE" type="WRITE"/>
+                <result parsername="Write2" name="WRITE2" type="WRITE2"/>
             </results>
         </msg>
     </commands>
+    <line>
+    </line>
 </products>

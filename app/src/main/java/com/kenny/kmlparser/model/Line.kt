@@ -1,4 +1,3 @@
 package com.kenny.kmlparser
 
-class Line {
-}
+class Line: HashSet<Any>()

@@ -4,5 +4,5 @@ import com.kenny.kmlparser.Msg
 
 class Commands {
 
-    var msgs: Array<Msg>? = null
+    var msg: Msg? = null
 }
