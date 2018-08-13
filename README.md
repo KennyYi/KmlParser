@@ -86,7 +86,6 @@ class Device {
 }
 ```
 
-## Precautions
+## Proguard
 
-1. Do not use Kotlin or Java keywords on XML.
-    * For example, Cannot use `val`, `package` for variable name.
+TBD
