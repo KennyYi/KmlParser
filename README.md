@@ -47,7 +47,7 @@ KmlParser.getInstance(this).parse(filePath, Products::class.java)
     }
 ```
 
-For `Collection` model, use `@ElementType(KClass<*>)`.
+For `Collection` model, use `@ElementType(val element: KClass<*>)`.
 
 ```Kotlin
 @ElementType(Result::class)
@@ -70,6 +70,19 @@ public class Device {
 
     public String version;
     public String name;
+}
+```
+
+Variable name is different with XML, uses `@Property(val name: String)` annotaion.
+
+```xml
+<device version="0.1" name="android" />
+```
+
+```Kotlin
+class Device {
+    @Property(name="version") var ver: String? = null
+    var name: String? = null
 }
 ```
 
