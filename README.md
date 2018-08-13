@@ -4,7 +4,26 @@ KmlParser is XML Parser by Kotlin
 
 ## Install
 
-TBD
+Add repository in your root `build.gradle`
+
+```groovy
+allprojects {
+    repositories {
+        ...
+        maven { url "https://jitpack.io" }
+    }
+}
+```
+
+Add library dependency in your app `build.gradle`
+
+```groovy
+dependencies {
+    ...
+    implementation 'com.github.KennyYi:KmlParser:0.0.1'
+    ...
+}
+```
 
 ## How to use
 
@@ -42,7 +61,17 @@ class Result {
 }
 ```
 
+For `Java` file, please make `public` for variables.
+
+```java
+public class Device {
+
+    public String version;
+    public String name;
+}
+```
+
 ## Precautions
 
-1. Do not use `val` keyword on XML.
-    * Cannot use `val` as a variable name in Kotlin.
+1. Do not use Kotlin or Java keywords on XML.
+    * For example, Cannot use `val`, `package` for variable name.
