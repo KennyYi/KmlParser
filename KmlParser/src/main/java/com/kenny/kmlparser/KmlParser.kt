@@ -60,7 +60,7 @@ class KmlParser private constructor(context: Context) {
 
         if (pullParser.name.equals(clazz.simpleName, true)) {
 
-            var instance = clazz.newInstance()
+            val instance = clazz.newInstance()
             val attributeMap = HashMap<String, Any>()
 
             for (index in 0..(pullParser.attributeCount - 1)) {
@@ -68,8 +68,15 @@ class KmlParser private constructor(context: Context) {
             }
 
             for (field in clazz.declaredFields) {
-                val name = field.name
-                val property = instance::class.memberProperties.find { it.name == name }
+
+                // If @Property is used for variable..
+                val propertyAnnotation = field.annotations.find { it is Property }
+
+                val name = propertyAnnotation?.let {
+                    (propertyAnnotation as Property).name
+                }?:field.name
+
+                val property = instance::class.memberProperties.find { it.name == field.name }
                 if (property is KMutableProperty<*>) property.setter.call(instance, attributeMap[name])
             }
 
@@ -80,7 +87,7 @@ class KmlParser private constructor(context: Context) {
                 val annotations = clazz.annotations
                 val elementType = annotations.find { it is ElementType }
 
-                if (elementType != null) {
+                elementType?.let {
                     val elementClass = (elementType as ElementType).element
                     while (pullParser.next() != XmlPullParser.END_TAG) {
 
@@ -97,9 +104,16 @@ class KmlParser private constructor(context: Context) {
 
                 for (field in clazz.declaredFields) {
 
-                    if (pullParser.name.equals(field.name, true)) {
-                        val name = field.name
-                        val property = instance::class.memberProperties.find { it.name == name }
+                    // If @Property is used for variable..
+                    val propertyAnnotation = field.annotations.find { it is Property }
+
+                    val name = propertyAnnotation?.let {
+                        (propertyAnnotation as Property).name
+                    }?:field.name
+
+                    if (pullParser.name.equals(name, true)) {
+
+                        val property = instance::class.memberProperties.find { it.name == field.name }
                         if (property is KMutableProperty<*>) property.setter.call(instance, parse(pullParser, field.type))
                     }
                 }
