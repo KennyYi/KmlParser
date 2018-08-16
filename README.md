@@ -22,7 +22,7 @@ dependencies {
     ...
     // KmlParser return result as a Observable<*>
     implementation 'io.reactivex.rxjava2:rxandroid:latest'
-    implementation 'com.github.KennyYi:KmlParser:0.0.1'
+    implementation 'com.github.KennyYi:KmlParser:0.0.3'
     ...
 }
 ```
@@ -86,7 +86,17 @@ class Device {
 }
 ```
 
-## Precautions
+To assign `XmlPullParser.TEXT` value to a variable, use `@XmlText` annotation.
 
-1. Do not use Kotlin or Java keywords on XML.
-    * For example, Cannot use `val`, `package` for variable name.
+```xml
+<color name="colorPrimary">#3F51B5</color>
+```
+```Kotlin
+class Color {
+    var name: String? = null // name = colorPrimary
+    @XmlText var value: String? = null // value = #3F51B5
+}
+```
+
+## Proguard
+TBD

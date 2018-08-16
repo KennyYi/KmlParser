@@ -58,6 +58,8 @@ class KmlParser private constructor(context: Context) {
     @Throws(XmlPullParserException::class, IOException::class)
     private fun <T : Any>parse(@NonNull pullParser: XmlPullParser, @NonNull clazz: Class<T>): T? {
 
+        Log.d("Kenny", "parse > ${clazz.simpleName}")
+
         if (pullParser.name.equals(clazz.simpleName, true)) {
 
             val instance = clazz.newInstance()
@@ -67,17 +69,25 @@ class KmlParser private constructor(context: Context) {
                 attributeMap[pullParser.getAttributeName(index)] = pullParser.getAttributeValue(index)
             }
 
-            for (field in clazz.declaredFields) {
+            // To check annotations
+            instance::class.memberProperties.forEach { property ->
 
                 // If @Property is used for variable..
-                val propertyAnnotation = field.annotations.find { it is Property }
+                val name = property.annotations.find { it is Property }
+                        ?.let {
+                            (it as Property).name
+                        } ?: property.name
 
-                val name = propertyAnnotation?.let {
-                    (propertyAnnotation as Property).name
-                }?:field.name
+                if (attributeMap[name] != null) {
+                    property.takeIf { it is KMutableProperty<*> }
+                            ?.let { (it as KMutableProperty<*>).setter.call(instance, attributeMap[name]) }
+                } else {
 
-                val property = instance::class.memberProperties.find { it.name == field.name }
-                if (property is KMutableProperty<*>) property.setter.call(instance, attributeMap[name])
+                    val field = clazz.declaredFields.find { it.name == property.name }
+                    field?.let {
+                        (property as KMutableProperty<*>).setter.call(instance, parse(pullParser, field.type))
+                    }
+                }
             }
 
             // Use @ElementType Annotation to know Element class type of Collection
@@ -90,39 +100,33 @@ class KmlParser private constructor(context: Context) {
                 elementType?.let {
                     val elementClass = (elementType as ElementType).element
                     while (pullParser.next() != XmlPullParser.END_TAG) {
-
-                        val element = parse(pullParser, elementClass.java).takeIf { it != null }
+                        val element = parse(pullParser, elementClass.java).takeIf { element ->  element != null }
                         CollectionsKt.addIfNotNull(instance, element)
                     }
                 }
             }
 
             while (pullParser.next() != XmlPullParser.END_TAG) {
-
                 if (pullParser.eventType == XmlPullParser.END_DOCUMENT) break
-                if (pullParser.eventType != XmlPullParser.START_TAG) continue
+                if (pullParser.eventType == XmlPullParser.TEXT) {
 
-                for (field in clazz.declaredFields) {
+                    // Handle @XmlText annotation
+                    val property = instance::class.memberProperties.mapNotNull {
+                        it.takeIf {
+                            member -> member.annotations.find { annotation -> annotation is XmlText } != null
+                        }
+                    }.firstOrNull()
 
-                    // If @Property is used for variable..
-                    val propertyAnnotation = field.annotations.find { it is Property }
-
-                    val name = propertyAnnotation?.let {
-                        (propertyAnnotation as Property).name
-                    }?:field.name
-
-                    if (pullParser.name.equals(name, true)) {
-
-                        val property = instance::class.memberProperties.find { it.name == field.name }
-                        if (property is KMutableProperty<*>) property.setter.call(instance, parse(pullParser, field.type))
+                    if (property != null) {
+                        (property as KMutableProperty<*>).setter.call(instance, pullParser.text)
                     }
+                } else if (pullParser.eventType == XmlPullParser.START_TAG) {
+                    Log.i("Kenny", "parser name: ${pullParser.name}")
+
                 }
             }
 
             return instance
         }
-
-        return null
-    }
 }
 
