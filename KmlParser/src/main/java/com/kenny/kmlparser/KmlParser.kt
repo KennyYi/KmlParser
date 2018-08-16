@@ -106,7 +106,10 @@ class KmlParser private constructor(context: Context) {
                         it.takeIf {
                             member -> member.annotations.find { annotation -> annotation is XmlText } != null
                         }
-                    }.first()
+                    }.firstOrNull()
+
+                    // No member for XmlPullParser.TEXT, skip this tag
+                    property?:continue
 
                     if (property is KMutableProperty<*>) property.setter.call(instance, pullParser.text)
                 } else if (pullParser.eventType == XmlPullParser.START_TAG) {
