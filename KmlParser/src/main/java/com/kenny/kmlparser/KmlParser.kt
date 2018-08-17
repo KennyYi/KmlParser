@@ -2,6 +2,9 @@ package com.kenny.kmlparser
 
 import android.content.Context
 import android.support.annotation.NonNull
+import com.kenny.kmlparser.annotations.ElementType
+import com.kenny.kmlparser.annotations.Property
+import com.kenny.kmlparser.annotations.XmlText
 import io.reactivex.Observable
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
@@ -51,81 +54,85 @@ class KmlParser private constructor(context: Context) {
             pullParser.setInput(inputStream, null)
             pullParser.nextTag()
 
-            return Observable.just(parse(pullParser, clazz))
+            val instance = parse(pullParser, clazz)
+
+            return when (instance) {
+                null -> Observable.empty()
+                else -> Observable.just(instance)
+            }
         }
     }
 
     @Throws(XmlPullParserException::class, IOException::class)
     private fun <T : Any>parse(@NonNull pullParser: XmlPullParser, @NonNull clazz: Class<T>): T? {
 
-        if (pullParser.name.equals(clazz.simpleName, true)) {
+        val className = clazz.annotations.find { it is Property }?.let { (it as Property).name }?:clazz.simpleName
+
+        if (pullParser.name.equals(className, true)) {
 
             val instance = clazz.newInstance()
             val attributeMap = HashMap<String, Any>()
 
-            for (index in 0..(pullParser.attributeCount - 1)) {
-                attributeMap[pullParser.getAttributeName(index)] = pullParser.getAttributeValue(index)
-            }
+            // If this class is a collection, check element type
+            val elementProperty = instance.takeIf { it is Collection<*> }.let {
+                clazz.annotations.find { annotation -> annotation is ElementType }?.let { annotation ->
 
-            for (field in clazz.declaredFields) {
+                    (annotation as ElementType).let { element ->
 
-                // If @Property is used for variable..
-                val name = field.annotations.find { it is Property }
-                        ?.let {
-                            (it as Property).name
-                        }?:field.name
-
-                val property = instance::class.memberProperties.find { it.name == field.name }
-                if (property is KMutableProperty<*>) property.setter.call(instance, attributeMap[name])
-            }
-
-            // Use @ElementType Annotation to know Element class type of Collection
-            if (instance is Collection<*>) {
-
-                // Check element class with annotation
-                val annotations = clazz.annotations
-                val elementType = annotations.find { it is ElementType }
-
-                elementType?.let {
-                    val elementClass = (elementType as ElementType).element
-                    while (pullParser.next() != XmlPullParser.END_TAG) {
-                        val element = parse(pullParser, elementClass.java).takeIf { element ->  element != null }
-                        CollectionsKt.addIfNotNull(instance, element)
+                        val name = element.elementName.isEmpty().let { isEmpty ->
+                            when (isEmpty) {
+                                true -> element.element.simpleName
+                                false -> element.elementName
+                            }
+                        }
+                        Pair(name, element.element)
                     }
                 }
             }
 
-            while (pullParser.next() != XmlPullParser.END_TAG) {
+            // Mapping and saving XML attribute name and value
+            for (index in 0..(pullParser.attributeCount - 1)) {
+                attributeMap[pullParser.getAttributeName(index)] = pullParser.getAttributeValue(index)
+            }
 
-                if (pullParser.eventType == XmlPullParser.END_DOCUMENT) break
-                if (pullParser.eventType == XmlPullParser.END_TAG) continue
+            instance::class.memberProperties.forEach {
+
+                val name = it.annotations.find { annotation -> annotation is Property}
+                        ?.let { property -> (property as Property).name }
+                        ?:it.name
+
+                attributeMap[name]?.let { value ->
+                    if (it is KMutableProperty<*>) it.setter.call(instance, value)
+                }
+            }
+
+            while (pullParser.next() != XmlPullParser.END_DOCUMENT) {
+
+                if (pullParser.eventType == XmlPullParser.END_TAG && pullParser.name.equals(className, true)) break
 
                 if (pullParser.eventType == XmlPullParser.TEXT) {
-                    // Handle @XmlText annotation
-                    val property = instance::class.memberProperties.mapNotNull {
-                        it.takeIf {
-                            member -> member.annotations.find { annotation -> annotation is XmlText } != null
-                        }
-                    }.firstOrNull()
+                    // Check @XmlText annotation
+                    instance::class.memberProperties.find {
+                        it.annotations.find { annotation -> annotation is XmlText } != null
+                    }?.let { (it as KMutableProperty<*>).setter.call(instance, pullParser.text) }
+                }
 
-                    // No member for XmlPullParser.TEXT, skip this tag
-                    property?:continue
+                if (pullParser.eventType == XmlPullParser.START_TAG) {
 
-                    if (property is KMutableProperty<*>) property.setter.call(instance, pullParser.text)
-                } else if (pullParser.eventType == XmlPullParser.START_TAG) {
-                    for (field in clazz.declaredFields) {
+                    // Collection
+                    if (elementProperty != null && pullParser.name.equals(elementProperty.first, true)) {
+                        val element = parse(pullParser, elementProperty.second.java).takeIf { element ->  element != null }
+                        CollectionsKt.addIfNotNull(instance as Collection<*>, element)
+                    } else {
+                        clazz.declaredFields.forEach { field ->
+                            val name = field.annotations.find { annotation -> annotation is Property}
+                                    ?.let { property -> (property as Property).name }
+                                    ?:field.name
 
-                        // If @Property is used for variable..
-                        val propertyAnnotation = field.annotations.find { it is Property }
-
-                        val name = propertyAnnotation?.let {
-                            (propertyAnnotation as Property).name
-                        }?:field.name
-
-                        if (pullParser.name.equals(name, true)) {
-
-                            val property = instance::class.memberProperties.find { it.name == field.name }
-                            if (property is KMutableProperty<*>) property.setter.call(instance, parse(pullParser, field.type))
+                            if (pullParser.name.equals(name, true)) {
+                                val property = instance::class.memberProperties.find { it.name == field.name }
+                                if (property is KMutableProperty<*>) property.setter.call(instance, parse(pullParser, field.type))
+                            }
                         }
                     }
                 }
