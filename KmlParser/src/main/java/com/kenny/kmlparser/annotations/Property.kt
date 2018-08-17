@@ -1,4 +1,4 @@
-package com.kenny.kmlparser
+package com.kenny.kmlparser.annotations
 
 /**
  * Use if Object variable name is different with XML property name
