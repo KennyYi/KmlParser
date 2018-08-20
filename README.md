@@ -101,4 +101,7 @@ class Color {
 ```
 
 ## Proguard
-TBD
+
+```groovy
+-keepnames class com.kenny.kmlparser.annotations.**
+```
