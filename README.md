@@ -22,7 +22,9 @@ dependencies {
     ...
     // KmlParser return result as a Observable<*>
     implementation 'io.reactivex.rxjava2:rxandroid:latest'
-    implementation 'com.github.KennyYi:KmlParser:0.0.3'
+    implementation ('com.github.KennyYi:KmlParser:0.0.4') {
+        exclude group: 'com.android.support', module: 'appcompat-v7'
+    }
     ...
 }
 ```
