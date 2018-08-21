@@ -31,6 +31,8 @@ dependencies {
 
 ## How to use
 
+### Initialize
+
 ```Kotlin
 // Create a model object.
 class Products {
@@ -49,7 +51,27 @@ KmlParser.getInstance(this).parse(filePath, Products::class.java)
     }
 ```
 
-For `Collection` model, use `@ElementType(val element: KClass<*>)`.
+### Variable name is different with XML, uses `@Property(val name: String)` annotaion
+
+```xml
+<device version="0.1" name="android" />
+```
+
+```Kotlin
+class Device {
+    @Property(name="version") var ver: String? = null
+    var name: String? = null
+}
+```
+
+### For `Collection` model, use `@ElementType(val element: KClass<*>)`
+
+```xml
+<results>
+    <result parsername="KmlParser" name="Kenny" type="String" />
+    <result parsername="XmlPullParser" name="Android" />
+</results>
+```
 
 ```Kotlin
 @ElementType(Result::class)
@@ -65,7 +87,24 @@ class Result {
 }
 ```
 
-For `Java` file, please make `public` for variables.
+```Kotlin
+// If class name is different with XML TAG name
+
+@Property("result")
+class Rslt {
+
+    var parsername: String? = null
+    var name: String? = null
+    var type: String? = null
+}
+
+...
+
+@ElementType(Rslt::class, "result")
+class Results: HashSet<Rslt>()
+```
+
+### For `Java` file, please make `public` for variables
 
 ```java
 public class Device {
@@ -75,24 +114,12 @@ public class Device {
 }
 ```
 
-Variable name is different with XML, uses `@Property(val name: String)` annotaion.
-
-```xml
-<device version="0.1" name="android" />
-```
-
-```Kotlin
-class Device {
-    @Property(name="version") var ver: String? = null
-    var name: String? = null
-}
-```
-
-To assign `XmlPullParser.TEXT` value to a variable, use `@XmlText` annotation.
+### To assign `XmlPullParser.TEXT` value to a variable, use `@XmlText` annotation
 
 ```xml
 <color name="colorPrimary">#3F51B5</color>
 ```
+
 ```Kotlin
 class Color {
     var name: String? = null // name = colorPrimary
