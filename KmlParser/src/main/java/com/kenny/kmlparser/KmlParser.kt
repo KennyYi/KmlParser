@@ -72,6 +72,7 @@ class KmlParser private constructor(context: Context) {
 
             val instance = clazz.newInstance()
             val attributeMap = HashMap<String, Any>()
+            val propertyNameMap = HashMap<String, String>()
 
             // If this class is a collection, check element type
             val elementProperty = instance.takeIf { it is Collection<*> }.let {
@@ -91,9 +92,7 @@ class KmlParser private constructor(context: Context) {
             }
 
             // Mapping and saving XML attribute name and value
-            for (index in 0..(pullParser.attributeCount - 1)) {
-                attributeMap[pullParser.getAttributeName(index)] = pullParser.getAttributeValue(index)
-            }
+            for (index in 0..(pullParser.attributeCount - 1)) attributeMap[pullParser.getAttributeName(index)] = pullParser.getAttributeValue(index)
 
             instance::class.memberProperties.forEach {
 
@@ -101,8 +100,13 @@ class KmlParser private constructor(context: Context) {
                         ?.let { property -> (property as Property).name }
                         ?:it.name
 
-                attributeMap[name]?.let { value ->
-                    if (it is KMutableProperty<*>) it.setter.call(instance, value)
+                attributeMap[name].let { value ->
+
+                    if (value != null && (it is KMutableProperty<*>)) {
+                        it.setter.call(instance, value)
+                    } else if (value == null) {
+                        propertyNameMap[it.name] = name
+                    }
                 }
             }
 
@@ -125,8 +129,9 @@ class KmlParser private constructor(context: Context) {
                         CollectionsKt.addIfNotNull(instance as Collection<*>, element)
                     } else {
                         clazz.declaredFields.forEach { field ->
-                            val name = field.annotations.find { annotation -> annotation is Property}
-                                    ?.let { property -> (property as Property).name }
+
+                            val name = propertyNameMap[field.name]
+                                    ?:field.annotations.find { annotation -> annotation is Property}?.let { property -> (property as Property).name }
                                     ?:field.name
 
                             if (pullParser.name.equals(name, true)) {
