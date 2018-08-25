@@ -1,11 +1,11 @@
 package com.kenny.kmlparser
 
 import android.content.Context
+import android.support.annotation.NonNull
 import com.kenny.kmlparser.annotations.ElementType
 import com.kenny.kmlparser.annotations.Property
 import com.kenny.kmlparser.annotations.XmlText
 import io.reactivex.Observable
-import io.reactivex.annotations.NonNull
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
