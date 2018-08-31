@@ -48,23 +48,17 @@ class KmlParser private constructor(context: Context) {
     fun <T : Any>parse(@NonNull inputStream: InputStream, @NonNull clazz: Class<T>): Observable<T> {
 
         val pullParser = XmlPullParserFactory.newInstance().newPullParser()
-
-        inputStream.use { stream ->
+        val instance = inputStream.use {
             pullParser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-            pullParser.setInput(stream, null)
+            pullParser.setInput(it, null)
             pullParser.nextTag()
 
-            return Observable.create {
-                val result = parse(pullParser, clazz)
+            parse(pullParser, clazz)
+        }
 
-                if (result != null) {
-                    it.onNext(result)
-                } else {
-                    it.onError(Throwable("Parsing error: ${clazz.simpleName}"))
-                }
-
-                it.onComplete()
-            }
+        return when (instance) {
+            null -> Observable.empty()
+            else -> Observable.just(instance)
         }
     }
 
