@@ -22,7 +22,7 @@ dependencies {
     ...
     // KmlParser return result as a Observable<*>
     implementation 'io.reactivex.rxjava2:rxandroid:latest'
-    implementation 'com.github.KennyYi:KmlParser:0.0.6'
+    implementation 'com.github.KennyYi:KmlParser:0.0.8'
     ...
 }
 ```
@@ -41,12 +41,20 @@ class Products {
 
 ```Kotlin
 KmlParser.getInstance(this).parse(filePath, Products::class.java)
+    .subscribe {
+        // it: Products
+        // TODO your job
+    }
+    
+// Async task
+Observable.defer { KmlParser.getInstance(this).parse(filePath, Products::class.java) }
     .subscribeOn(Schedulers.io())
     .observeOn(AndroidSchedulers.mainThread())
     .subscribe {
         // it: Products
         // TODO your job
     }
+
 ```
 
 ### Variable name is different with XML, uses `@Property(val name: String)` annotaion
